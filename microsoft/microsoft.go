@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	oauth "github.com/lian-yue/oauth-api"
+	oauth "github.com/otamoe/oauth-api"
 )
 
 //  https://apps.dev.microsoft.com/portal/register-app

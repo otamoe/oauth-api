@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	oauth "github.com/lian-yue/oauth-api"
+	oauth "github.com/otamoe/oauth-api"
 )
 
 type (
