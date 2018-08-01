@@ -256,6 +256,10 @@ func (c *OAuth2) Signature(req *http.Request, token *Token, values url.Values) (
 			values = MergeValues(false, values, url.Values{ClientIDKey: {c.ClientID}, ClientSecret: {c.ClientSecret}})
 		}
 	} else {
+		if token.Expired != nil && token.Expired.Before(time.Now()) {
+			err = ErrTokenExpired
+			return
+		}
 		if token.ClientID != "" && token.ClientID != c.ClientID {
 			err = NewError("Token.ClientID does not match", 500)
 			return

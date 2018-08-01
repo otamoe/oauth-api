@@ -239,6 +239,10 @@ func (c *OAuth1) RevokeToken(ctx context.Context, token *Token, values url.Value
 }
 
 func (c *OAuth1) Signature(req *http.Request, token *Token, values url.Values) (err error) {
+	if token != nil && token.Expired != nil && token.Expired.Before(time.Now()) {
+		err = ErrTokenExpired
+		return
+	}
 	clientHeader := "OAuth "
 	if c.Endpoint.ClientHeader != "" {
 		clientHeader = c.Endpoint.ClientHeader + " "
