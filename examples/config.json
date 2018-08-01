@@ -1,0 +1,92 @@
+{
+    "google": {
+      "client_id": "392542345422-fleq93rplgenuppicf6oloep6uqrifvg.apps.googleusercontent.com",
+      "client_secret": "******",
+  		"scopes": ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"],
+  		"redirect_uri": "http://localhost:8080/auth/oauth/google"
+    },
+    "facebook": {
+      "client_id": "831694983700235",
+      "client_secret": "******",
+  		"scopes": ["email", "user_birthday", "user_likes", "user_hometown", "user_location"],
+  		"redirect_uri": "https://lianyue.org/callback"
+    },
+    "twitter": {
+      "client_id": "kRmF18pwok3hhz4cBS2FgiXbL",
+      "client_secret": "******",
+  		"scopes": [],
+  		"redirect_uri": "http://localhost:8080/auth/oauth/twitter"
+    },
+    "microsoft": {
+      "client_id": "108dc63a-7f21-4efd-af96-2a8782ea9a9c",
+      "client_secret": "******",
+  		"scopes": ["openid", "profile", "User.Read", "email"],
+  		"redirect_uri": "http://localhost:8080/callback"
+    },
+    "amazon": {
+      "client_id": "amzn1.application-oa2-client.7719a0ec772e4275af4cb7c9e7ea22f3",
+      "client_secret": "******",
+  		"scopes": ["profile"],
+  		"redirect_uri": "http://localhost:8080/callback"
+    },
+    "linkedin": {
+      "client_id": "8139dw6diy0j9c",
+      "client_secret": "******",
+  		"scopes": ["r_basicprofile", "r_emailaddress"],
+  		"redirect_uri": "http://localhost:8080/callback"
+    },
+    "line": {
+      "client_id": "1597809538",
+      "client_secret": "******",
+  		"scopes": ["profile", "openid", "email"],
+  		"redirect_uri": "http://localhost:8080/callback"
+    },
+    "github": {
+      "client_id": "d9c9ea1471f97d1d5dca",
+      "client_secret": "******",
+  		"scopes": ["read:user"],
+  		"redirect_uri": "http://localhost:8080/auth/oauth/github"
+    },
+    "gitlab": {
+      "client_id": "decfbb317607374e63eb20b652d0e724a3b0c1c0262251829e969fe6b8efdb34",
+      "client_secret": "******",
+  		"scopes": ["api", "read_user", "read_repository", "read_registry", "openid"],
+  		"redirect_uri": "http://localhost:8080/callback"
+    },
+    "bitbucket": {
+      "client_id": "hamewTQ9M7KY4VQmV2",
+      "client_secret": "******",
+  		"scopes": ["account", "pipeline", "webhook", "wiki", "issue", "pullrequest", "project", "team email"],
+  		"redirect_uri": "http://localhost:8080/callback"
+    },
+    "twitch": {
+      "client_id": "4n44foa1ezlvj4vuky0l3u7b5peq7r",
+      "client_secret": "******",
+  		"scopes": ["user:read:email"],
+  		"redirect_uri": "http://localhost:8080/callback"
+    },
+    "baidu": {
+      "client_id": "gegHmh10iVkXXIay10HnFp37",
+      "client_secret": "******",
+  		"scopes": ["basic"],
+  		"redirect_uri": "http://localhost:3000/accounts/oauth/baidu/callback"
+    },
+    "weibo": {
+      "client_id": "1493501598",
+      "client_secret": "******",
+  		"scopes": ["all"],
+  		"redirect_uri": "http://lianyue.org/auth/callback"
+    },
+    "qq": {
+      "client_id": "201432",
+      "client_secret": "******",
+  		"scopes": ["get_user_info"],
+  		"redirect_uri": "http://www.lianyue.org/callback.php"
+    },
+    "wechat": {
+      "client_id": "201432",
+      "client_secret": "******",
+  		"scopes": ["snsapi_userinfo"],
+  		"redirect_uri": "http://www.lianyue.org/callback.php"
+    }
+}
