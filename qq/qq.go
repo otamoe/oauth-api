@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"time"
 
-	oauth "github.com/otamoe/oauth-api"
+	"github.com/otamoe/oauth-client"
 )
 
 type (
@@ -25,8 +25,8 @@ var Endpoint = oauth.Endpoint{
 	Errors:          []string{"msg", "ret"},
 }
 
-func (c *Client) Exchange(ctx context.Context, query url.Values, data interface{}, cache oauth.Cache, values url.Values) (token *oauth.Token, err error) {
-	if token, err = c.OAuth2.Exchange(ctx, query, data, cache, values); err == nil {
+func (c *Client) Exchange(ctx context.Context, query url.Values, data interface{}, values url.Values) (token *oauth.Token, err error) {
+	if token, err = c.OAuth2.Exchange(ctx, query, data, values); err == nil {
 		err = c.OpenID(ctx, token)
 	}
 	return

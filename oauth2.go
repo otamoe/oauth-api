@@ -45,7 +45,7 @@ func (c *OAuth2) ID(query url.Values) (id string) {
 	return
 }
 
-func (c *OAuth2) Authorize(ctx context.Context, data interface{}, cache Cache, values url.Values) (authorizeURL *url.URL, err error) {
+func (c *OAuth2) Authorize(ctx context.Context, data interface{}, values url.Values) (authorizeURL *url.URL, err error) {
 	state := RandString(48)
 
 	if authorizeURL, err = url.Parse(c.Endpoint.AuthorizeURL); err != nil {
@@ -78,7 +78,12 @@ func (c *OAuth2) Authorize(ctx context.Context, data interface{}, cache Cache, v
 
 	query = MergeValues(true, query, defaultValues, values, AppendValues)
 	authorizeURL.RawQuery = query.Encode()
-
+	var cache Cache
+	if ctx != nil {
+		if v, ok := ctx.Value(ContextCache).(Cache); ok {
+			cache = v
+		}
+	}
 	if cache != nil {
 		var dataString string
 		if data != nil {
@@ -96,14 +101,20 @@ func (c *OAuth2) Authorize(ctx context.Context, data interface{}, cache Cache, v
 	return
 }
 
-func (c *OAuth2) Exchange(ctx context.Context, query url.Values, data interface{}, cache Cache, values url.Values) (token *Token, err error) {
+func (c *OAuth2) Exchange(ctx context.Context, query url.Values, data interface{}, values url.Values) (token *Token, err error) {
 	state := query.Get("state")
 	code := query.Get("code")
 
+	var cache Cache
+	if ctx != nil {
+		if v, ok := ctx.Value(ContextCache).(Cache); ok {
+			cache = v
+		}
+	}
 	if cache != nil {
 		key := state
 		if key == "" {
-			err = ErrCancel
+			err = ErrDenied
 			return
 		}
 		key = c.cacheKey(key)
@@ -120,6 +131,11 @@ func (c *OAuth2) Exchange(ctx context.Context, query url.Values, data interface{
 			err = ErrDenied
 			return
 		}
+		if split[1] != "" && data != nil {
+			if err = json.Unmarshal([]byte(split[1]), data); err != nil {
+				return
+			}
+		}
 		if split[0] != "0" {
 			err = ErrDenied
 			return
@@ -127,12 +143,6 @@ func (c *OAuth2) Exchange(ctx context.Context, query url.Values, data interface{
 		split[0] = "1"
 		if err = cache.Set(key, strings.Join(split, ",")); err != nil {
 			return
-		}
-
-		if split[1] != "" && data != nil {
-			if err = json.Unmarshal([]byte(split[1]), data); err != nil {
-				return
-			}
 		}
 	}
 

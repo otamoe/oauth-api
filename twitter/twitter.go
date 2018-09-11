@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	oauth "github.com/otamoe/oauth-api"
+	"github.com/otamoe/oauth-client"
 )
 
 type (

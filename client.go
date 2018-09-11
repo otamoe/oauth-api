@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
@@ -40,12 +40,11 @@ type (
 	}
 
 	Config struct {
-		HTTPClient   *http.Client `json:"-"`
-		Endpoint     Endpoint     `json:"endpoint"`
-		ClientID     string       `json:"client_id"`
-		ClientSecret string       `json:"client_secret"`
-		Scopes       []string     `json:"scopes"`
-		RedirectURI  string       `json:"redirect_uri"`
+		Endpoint     Endpoint `json:"endpoint"`
+		ClientID     string   `json:"client_id"`
+		ClientSecret string   `json:"client_secret"`
+		Scopes       []string `json:"scopes"`
+		RedirectURI  string   `json:"redirect_uri"`
 	}
 
 	Client interface {
@@ -53,8 +52,8 @@ type (
 		Version() string
 		Cancel(query url.Values) bool
 
-		Authorize(ctx context.Context, data interface{}, cache Cache, values url.Values) (authorizeURL *url.URL, err error)
-		Exchange(ctx context.Context, query url.Values, data interface{}, cache Cache, values url.Values) (token *Token, err error)
+		Authorize(ctx context.Context, data interface{}, values url.Values) (authorizeURL *url.URL, err error)
+		Exchange(ctx context.Context, query url.Values, data interface{}, values url.Values) (token *Token, err error)
 		AccessToken(ctx context.Context, values url.Values) (token *Token, err error)
 		PassowrdToken(ctx context.Context, values url.Values) (token *Token, err error)
 		ClientCredentialsToken(ctx context.Context, values url.Values) (token *Token, err error)
@@ -73,6 +72,7 @@ type (
 )
 
 var ContextHTTPClient = "OAUTH_CONTEXT_HTTP_CLIENT"
+var ContextCache = "OAUTH_CONTEXT_CACHE"
 var DEBUG = false
 
 var regexpCallback = regexp.MustCompile("^[0-9a-zA-Z._]+\\((.*)\\);?$")
@@ -217,9 +217,9 @@ func (c *Config) Response(ctx context.Context, httpClient *http.Client, req *htt
 }
 
 func (c *Config) cacheKey(key string) string {
-	hash := sha1.New()
+	hash := sha256.New()
 	hash.Write([]byte(key))
-	return strings.Join([]string{"oauth", c.Name(), c.ClientID, base64.StdEncoding.EncodeToString(hash.Sum(nil))}, ".")
+	return strings.Join([]string{c.Name(), c.ClientID, base64.StdEncoding.EncodeToString(hash.Sum(nil))}, ".")
 }
 
 func (c *Config) User(ctx context.Context, token *Token) (user *User, err error) {

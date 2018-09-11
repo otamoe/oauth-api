@@ -51,7 +51,7 @@ func (c *OAuth1) Cancel(query url.Values) bool {
 	return false
 }
 
-func (c *OAuth1) Authorize(ctx context.Context, data interface{}, cache Cache, values url.Values) (authorizeURL *url.URL, err error) {
+func (c *OAuth1) Authorize(ctx context.Context, data interface{}, values url.Values) (authorizeURL *url.URL, err error) {
 	var oauthToken string
 	var oauthTokenSecret string
 	var req *http.Request
@@ -90,6 +90,13 @@ func (c *OAuth1) Authorize(ctx context.Context, data interface{}, cache Cache, v
 	query = MergeValues(true, query, values, AppendValues)
 	authorizeURL.RawQuery = query.Encode()
 
+	var cache Cache
+	if ctx != nil {
+		if v, ok := ctx.Value(ContextCache).(Cache); ok {
+			cache = v
+		}
+	}
+
 	if cache != nil {
 		var dataString string
 		if data != nil {
@@ -106,11 +113,16 @@ func (c *OAuth1) Authorize(ctx context.Context, data interface{}, cache Cache, v
 	return
 }
 
-func (c *OAuth1) Exchange(ctx context.Context, query url.Values, data interface{}, cache Cache, values url.Values) (token *Token, err error) {
+func (c *OAuth1) Exchange(ctx context.Context, query url.Values, data interface{}, values url.Values) (token *Token, err error) {
 	oauthToken := query.Get("oauth_token")
 	oauthVerifier := query.Get("oauth_verifier")
 	var oauthTokenSecret string
-
+	var cache Cache
+	if ctx != nil {
+		if v, ok := ctx.Value(ContextCache).(Cache); ok {
+			cache = v
+		}
+	}
 	if cache != nil {
 		key := oauthToken
 		if key == "" {
@@ -134,6 +146,11 @@ func (c *OAuth1) Exchange(ctx context.Context, query url.Values, data interface{
 			err = ErrDenied
 			return
 		}
+		if split[2] != "" && data != nil {
+			if err = json.Unmarshal([]byte(split[2]), data); err != nil {
+				return
+			}
+		}
 		if split[0] != "0" {
 			err = ErrDenied
 			return
@@ -143,11 +160,6 @@ func (c *OAuth1) Exchange(ctx context.Context, query url.Values, data interface{
 			return
 		}
 		oauthTokenSecret = split[1]
-		if split[2] != "" && data != nil {
-			if err = json.Unmarshal([]byte(split[2]), data); err != nil {
-				return
-			}
-		}
 	}
 
 	if c.Cancel(query) {
