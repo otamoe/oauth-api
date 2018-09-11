@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"gx/ipfs/QmTEmsyNnckEq8rEfALfdhLHjrEHGoSGFDrAYReuetn7MC/go-net/context/ctxhttp"
 	"io"
 	"io/ioutil"
 	"log"
@@ -20,6 +19,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"golang.org/x/net/context/ctxhttp"
 )
 
 type (
