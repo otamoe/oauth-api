@@ -2,7 +2,6 @@ package oauth
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -40,14 +39,8 @@ func (c *OAuth2) Cancel(query url.Values) bool {
 	}
 	return false
 }
-func (c *OAuth2) ID(query url.Values) (id string) {
-	id = query.Get("state")
-	return
-}
 
-func (c *OAuth2) Authorize(ctx context.Context, data interface{}, values url.Values) (authorizeURL *url.URL, err error) {
-	state := RandString(48)
-
+func (c *OAuth2) Authorize(ctx context.Context, state string, values url.Values) (authorizeURL *url.URL, data map[string]interface{}, err error) {
 	if authorizeURL, err = url.Parse(c.Endpoint.AuthorizeURL); err != nil {
 		return
 	}
@@ -77,79 +70,19 @@ func (c *OAuth2) Authorize(ctx context.Context, data interface{}, values url.Val
 	}
 
 	query = MergeValues(true, query, defaultValues, values, AppendValues)
-	authorizeURL.RawQuery = query.Encode()
-	var cache Cache
-	if ctx != nil {
-		if v, ok := ctx.Value(ContextCache).(Cache); ok {
-			cache = v
-		}
-	}
-	if cache != nil {
-		var dataString string
-		if data != nil {
-			var b []byte
-			if b, err = json.Marshal(data); err != nil {
-				return
-			}
-			dataString = string(b)
-		}
-		if err = cache.Set(c.cacheKey(state), strings.Join([]string{"0", dataString}, ",")); err != nil {
-			return
-		}
-	}
 
+	data = map[string]interface{}{}
+	authorizeURL.RawQuery = query.Encode()
 	return
 }
 
-func (c *OAuth2) Exchange(ctx context.Context, query url.Values, data interface{}, values url.Values) (token *Token, err error) {
-	state := query.Get("state")
-	code := query.Get("code")
-
-	var cache Cache
-	if ctx != nil {
-		if v, ok := ctx.Value(ContextCache).(Cache); ok {
-			cache = v
-		}
-	}
-	if cache != nil {
-		key := state
-		if key == "" {
-			err = ErrDenied
-			return
-		}
-		key = c.cacheKey(key)
-		var value string
-		if value, err = cache.Get(key); err != nil {
-			return
-		}
-		if value == "" {
-			err = ErrDenied
-			return
-		}
-		split := strings.SplitN(value, ",", 2)
-		if len(split) != 2 {
-			err = ErrDenied
-			return
-		}
-		if split[1] != "" && data != nil {
-			if err = json.Unmarshal([]byte(split[1]), data); err != nil {
-				return
-			}
-		}
-		if split[0] != "0" {
-			err = ErrDenied
-			return
-		}
-		split[0] = "1"
-		if err = cache.Set(key, strings.Join(split, ",")); err != nil {
-			return
-		}
-	}
-
+func (c *OAuth2) Exchange(ctx context.Context, query url.Values, data map[string]interface{}, values url.Values) (token *Token, err error) {
 	if c.Cancel(query) {
 		err = ErrCancel
 		return
 	}
+
+	code := query.Get("code")
 
 	if values == nil {
 		values = url.Values{}

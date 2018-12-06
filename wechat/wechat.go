@@ -27,8 +27,8 @@ var Endpoint = oauth.Endpoint{
 	ClientSecretKey: "secret",
 }
 
-func (c *Client) Authorize(ctx context.Context, data interface{}, cache oauth.Cache, values url.Values) (authorizeURL *url.URL, err error) {
-	if authorizeURL, err = c.OAuth2.Authorize(ctx, data, cache, values); err != nil {
+func (c *Client) Authorize(ctx context.Context, state string, values url.Values) (authorizeURL *url.URL, data map[string]interface{}, err error) {
+	if authorizeURL, data, err = c.OAuth2.Authorize(ctx, state, values); err != nil {
 		return
 	}
 	var qrcode bool

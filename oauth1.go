@@ -6,7 +6,6 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/base64"
-	"encoding/json"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -27,13 +26,6 @@ func (c *OAuth1) Version() string {
 	return "1.0"
 }
 
-func (c *OAuth1) ID(query url.Values) (id string) {
-	if id = query.Get("oauth_token"); id == "" {
-		id = query.Get("denied")
-	}
-	return
-}
-
 func (c *OAuth1) Cancel(query url.Values) bool {
 	if query.Get("error") != "" {
 		return true
@@ -51,14 +43,22 @@ func (c *OAuth1) Cancel(query url.Values) bool {
 	return false
 }
 
-func (c *OAuth1) Authorize(ctx context.Context, data interface{}, values url.Values) (authorizeURL *url.URL, err error) {
+func (c *OAuth1) Authorize(ctx context.Context, state string, values url.Values) (authorizeURL *url.URL, data map[string]interface{}, err error) {
 	var oauthToken string
 	var oauthTokenSecret string
 	var req *http.Request
 	if req, err = http.NewRequest("POST", c.Endpoint.RequestURL, nil); err != nil {
 		return
 	}
-	req.Header.Set("Authorization", url.Values{"oauth_callback": {c.RedirectURI}}.Encode())
+
+	var redirectUri *url.URL
+	if redirectUri, err = url.Parse(c.RedirectURI); err != nil {
+		return
+	}
+	redirectUriQuery := redirectUri.Query()
+	redirectUriQuery.Set("state", state)
+	redirectUri.RawQuery = redirectUriQuery.Encode()
+	req.Header.Set("Authorization", url.Values{"oauth_callback": {redirectUri.String()}}.Encode())
 	httpClient := HTTPClient(ctx, c, nil)
 	var raw map[string]interface{}
 	if raw, err = c.Response(ctx, httpClient, req); err != nil {
@@ -69,11 +69,13 @@ func (c *OAuth1) Authorize(ctx context.Context, data interface{}, values url.Val
 		err = NewError("oauth_callback_confirmed was not true", 500)
 		return
 	}
+
 	var ok bool
 	if oauthToken, ok = raw["oauth_token"].(string); !ok || oauthToken == "" {
 		err = NewError("oauth_token not string", 500)
 		return
 	}
+
 	if oauthTokenSecret, ok = raw["oauth_token_secret"].(string); !ok || oauthTokenSecret == "" {
 		err = NewError("oauth_token_secret not string", 500)
 		return
@@ -89,81 +91,25 @@ func (c *OAuth1) Authorize(ctx context.Context, data interface{}, values url.Val
 	query := authorizeURL.Query()
 	query = MergeValues(true, query, values, AppendValues)
 	authorizeURL.RawQuery = query.Encode()
-
-	var cache Cache
-	if ctx != nil {
-		if v, ok := ctx.Value(ContextCache).(Cache); ok {
-			cache = v
-		}
-	}
-
-	if cache != nil {
-		var dataString string
-		if data != nil {
-			var b []byte
-			if b, err = json.Marshal(data); err != nil {
-				return
-			}
-			dataString = string(b)
-		}
-		if err = cache.Set(c.cacheKey(oauthToken), strings.Join([]string{"0", oauthTokenSecret, dataString}, ",")); err != nil {
-			return
-		}
+	data = map[string]interface{}{
+		"oauth_token":        oauthToken,
+		"oauth_token_secret": oauthTokenSecret,
 	}
 	return
 }
 
-func (c *OAuth1) Exchange(ctx context.Context, query url.Values, data interface{}, values url.Values) (token *Token, err error) {
-	oauthToken := query.Get("oauth_token")
-	oauthVerifier := query.Get("oauth_verifier")
-	var oauthTokenSecret string
-	var cache Cache
-	if ctx != nil {
-		if v, ok := ctx.Value(ContextCache).(Cache); ok {
-			cache = v
-		}
-	}
-	if cache != nil {
-		key := oauthToken
-		if key == "" {
-			key = query.Get("denied")
-		}
-		if key == "" {
-			err = ErrDenied
-			return
-		}
-		key = c.cacheKey(key)
-		var value string
-		if value, err = cache.Get(key); err != nil {
-			return
-		}
-		if value == "" {
-			err = ErrDenied
-			return
-		}
-		split := strings.SplitN(value, ",", 3)
-		if len(split) != 3 {
-			err = ErrDenied
-			return
-		}
-		if split[2] != "" && data != nil {
-			if err = json.Unmarshal([]byte(split[2]), data); err != nil {
-				return
-			}
-		}
-		if split[0] != "0" {
-			err = ErrDenied
-			return
-		}
-		split[0] = "1"
-		if err = cache.Set(key, strings.Join(split, ",")); err != nil {
-			return
-		}
-		oauthTokenSecret = split[1]
-	}
-
+func (c *OAuth1) Exchange(ctx context.Context, query url.Values, data map[string]interface{}, values url.Values) (token *Token, err error) {
 	if c.Cancel(query) {
 		err = ErrCancel
+		return
+	}
+
+	oauthToken := query.Get("oauth_token")
+	oauthVerifier := query.Get("oauth_verifier")
+	oauthTokenSecret, _ := data["oauth_token_secret"].(string)
+
+	if val, ok := data["oauth_token"].(string); !ok || val != oauthToken {
+		err = ErrDenied
 		return
 	}
 

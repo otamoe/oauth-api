@@ -25,7 +25,7 @@ var Endpoint = oauth.Endpoint{
 	Errors:          []string{"msg", "ret"},
 }
 
-func (c *Client) Exchange(ctx context.Context, query url.Values, data interface{}, values url.Values) (token *oauth.Token, err error) {
+func (c *Client) Exchange(ctx context.Context, query url.Values, data map[string]interface{}, values url.Values) (token *oauth.Token, err error) {
 	if token, err = c.OAuth2.Exchange(ctx, query, data, values); err == nil {
 		err = c.OpenID(ctx, token)
 	}

@@ -31,10 +31,6 @@ import (
 	"github.com/otamoe/oauth-client/weibo"
 )
 
-type Data struct {
-	Rand string
-}
-
 func Client(name string) (client oauth.Client) {
 	configb, err := ioutil.ReadFile("./config.json")
 	if err != nil {
@@ -185,9 +181,7 @@ func main() {
 	var callbackString string
 	inputReader := bufio.NewReader(os.Stdin)
 	ctx := context.Background()
-	cache := &oauth.MemCache{
-		Maximum: 100000,
-	}
+
 	var token *oauth.Token
 
 	fmt.Println("Please enter name:")
@@ -198,10 +192,8 @@ func main() {
 
 	client := Client(name)
 
-	data := &Data{
-		Rand: oauth.RandString(32),
-	}
-	if authorize, err = client.Authorize(ctx, data, cache, nil); err != nil {
+	var data map[string]interface{}
+	if authorize, data, err = client.Authorize(ctx, oauth.RandString(32), nil); err != nil {
 		log.Fatalln(err)
 	}
 	OpenBrowser(authorize.String())
@@ -216,8 +208,7 @@ func main() {
 	if callback, err = url.Parse(strings.TrimSpace(callbackString)); err != nil {
 		log.Fatalln(err)
 	}
-	data = &Data{}
-	if token, err = client.Exchange(ctx, callback.Query(), data, cache, nil); err != nil {
+	if token, err = client.Exchange(ctx, callback.Query(), data, nil); err != nil {
 		log.Fatalln(err)
 	}
 	tokenString, _ := json.MarshalIndent(token, "", "    ")
