@@ -17,7 +17,7 @@ func (e Error) Error() string {
 }
 
 func NewError(message string, status int) error {
-	return Error{
+	return &Error{
 		Message: message,
 		Status:  status,
 	}
